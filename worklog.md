@@ -1,27 +1,24 @@
+# Worklog
+
 ---
 Task ID: 1
 Agent: Main Agent
-Task: Build NexTrade Pro crypto trading platform from scratch with MongoDB
+Task: Redesign HomePage to match FunderPro's style
 
 Work Log:
-- Cleaned project directory, scaffolded fresh Next.js 16 project
-- Installed all dependencies: mongoose, bcryptjs, jsonwebtoken, zustand, framer-motion, recharts, lucide-react, radix-ui
-- Created MongoDB connection (src/lib/db.ts) with connection pooling and caching
-- Created 8 Mongoose models: User, Wallet, Transaction, Trade, InvitationCode, Notification, Referral, AgentConfig
-- Created auth utilities (JWT + bcrypt) and auto-seed script
-- Created 4 auth API routes: login, register, me, change-password
-- Created 11 admin API routes: users, agents, trades, wallets, analytics, commissions, risk, settings, notifications, audit, invitations
-- Created Zustand store with 31 page types and SPA routing
-- Built 22 UI components: Login, Register, Dashboard, Trading, Wallet, Profile, Notifications, LockScreen, Referral + 11 Admin pages + Sidebar + Header
-- Fixed TypeScript build errors (framer-motion ease typing, Recharts formatter types, CSS shrink property)
-- Build passes successfully with 0 errors
-- Dev server starts and serves the app (200 OK)
-- MongoDB Atlas connection needs IP whitelist: 8.212.10.159
+- Scraped FunderPro.com homepage and pricing page for design research
+- Extracted color palette: deep navy (#0f1527, #0c1120), electric blue (#4FBBE3, #0095f7), red CTA (#d61f33, #ff5b6b), muted text (#6e7895, #7F8BAB)
+- Analyzed FunderPro's layout: sticky nav, hero with achievement stats, challenge type cards, pricing size selector, trader reviews, comparison table, FAQ accordion, CTA, footer
+- Completely rewrote `/src/components/pages/HomePage.tsx` with FunderPro-inspired design
+- Key design changes: replaced gold accents with red CTAs, blue brand color, FunderPro card styles, prop-trading themed content
+- Integrated HomePage into `page.tsx` as the landing page for unauthenticated users (replaced LoginPage at `/`)
+- Added `body.landing-active` CSS class to allow scroll for the landing page
+- Added `useEffect` in HomePage to toggle body scroll class
+- Fixed TypeScript error with framer-motion ease arrays using `as const`
+- Build passes with 0 errors
 
 Stage Summary:
-- Complete NexTrade Pro platform with 46 source files, ~7000+ lines of code
-- Frontend: Dark crypto trading UI with Recharts charts, Framer Motion animations, Zustand SPA routing
-- Backend: MongoDB/Mongoose, JWT auth, bcrypt, RBAC (SUPER_ADMIN/SUB_AGENT/USER)
-- Default login: crdbixx@gmail.com / 123playbeat
-- 5 sub-agent accounts pre-seeded with invitation codes PB-AG001 to PB-AG005
-- ACTION NEEDED: User must whitelist IP 8.212.10.159 in MongoDB Atlas
+- HomePage redesigned with FunderPro's dark navy + electric blue + red CTA design language
+- Sections: Nav, Hero (stats), Feature Badges Bar, Challenge Types (3 cards), Account Size Selector, Trader Reviews (3 cards), Comparison Table, Why Us (6 features), FAQ Accordion, Final CTA, Footer
+- `/` now shows the FunderPro-style landing page for unauthenticated users
+- Auth flow moved to `/signin` (unchanged)

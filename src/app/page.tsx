@@ -5,8 +5,7 @@ import { AnimatePresence, motion } from 'framer-motion';
 import { useStore, Pages } from '@/store/useStore';
 import Sidebar from '@/components/layout/Sidebar';
 import Header from '@/components/layout/Header';
-import LoginPage from '@/components/pages/LoginPage';
-import RegisterPage from '@/components/pages/RegisterPage';
+import HomePage from '@/components/pages/HomePage';
 import DashboardPage from '@/components/pages/DashboardPage';
 import TradingPage from '@/components/pages/TradingPage';
 import WalletPage from '@/components/pages/WalletPage';
@@ -62,20 +61,9 @@ function PageRouter() {
 export default function Home() {
   const { isAuthenticated, currentPage } = useStore();
 
+  /* Unauthenticated users see the FunderPro-style landing page */
   if (!isAuthenticated) {
-    return (
-      <AnimatePresence mode="wait">
-        {currentPage === Pages.REGISTER ? (
-          <motion.div key="register" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} style={{ height: '100vh' }}>
-            <RegisterPage />
-          </motion.div>
-        ) : (
-          <motion.div key="login" initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} transition={{ duration: 0.2 }} style={{ height: '100vh' }}>
-            <LoginPage />
-          </motion.div>
-        )}
-      </AnimatePresence>
-    );
+    return <HomePage />;
   }
 
   return (

@@ -29,6 +29,14 @@ body {
   height: 100vh;
 }
 
+/* Landing page overrides: allow body scroll, no fixed height */
+body.landing-active {
+  overflow-y: auto;
+  overflow-x: hidden;
+  height: auto;
+  min-height: 100vh;
+}
+
 /* Scrollbar */
 ::-webkit-scrollbar { width: 6px; }
 ::-webkit-scrollbar-track { background: transparent; }
