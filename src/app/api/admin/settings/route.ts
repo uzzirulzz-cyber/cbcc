@@ -55,8 +55,8 @@ export async function GET(request: NextRequest) {
     const token = extractBearerToken(request.headers.get('authorization'));
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const payload = verifyToken(token);
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN only' }, { status: 403 });
+    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'SUB_AGENT')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const [totalUsers, activeUsers] = await Promise.all([

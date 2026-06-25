@@ -12,8 +12,8 @@ export async function GET(request: NextRequest) {
     const token = extractBearerToken(request.headers.get('authorization'));
     if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     const payload = verifyToken(token);
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN only' }, { status: 403 });
+    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'SUB_AGENT')) {
+      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
     }
 
     const { searchParams } = new URL(request.url);
@@ -26,7 +26,29 @@ export async function GET(request: NextRequest) {
     const filter: Record<string, any> = {};
     if (role) filter.role = role;
     if (status) filter.status = status;
-    if (search) {
+
+    // SUB_AGENT can only see their own referred users + themselves
+    if (payload.role === 'SUB_AGENT') {
+      const agentFilter = {
+        $or: [
+          { agentId: payload.userId },
+          { _id: payload.userId },
+        ],
+      };
+      if (search) {
+        const searchRegex = { $regex: search, $options: 'i' };
+        filter.$and = [
+          agentFilter,
+          { $or: [
+            { name: searchRegex },
+            { email: searchRegex },
+            { phone: searchRegex },
+          ]},
+        ];
+      } else {
+        Object.assign(filter, agentFilter);
+      }
+    } else if (search) {
       filter.$or = [
         { name: { $regex: search, $options: 'i' } },
         { email: { $regex: search, $options: 'i' } },
