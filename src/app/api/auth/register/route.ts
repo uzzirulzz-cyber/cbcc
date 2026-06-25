@@ -10,18 +10,33 @@ export async function POST(req: NextRequest) {
   try {
     await connectDB();
 
-    const { name, email, password, invitationCode } = await req.json();
-    if (!name || !email || !password || !invitationCode) {
-      return NextResponse.json({ error: 'All fields required' }, { status: 400 });
+    const { firstName, lastName, email, phone, password, invitationCode } = await req.json();
+
+    if (!firstName || !lastName || !email || !password) {
+      return NextResponse.json({ error: 'First name, last name, email, and password are required' }, { status: 400 });
     }
 
-    // Validate invitation code
-    const code = await InvitationCode.findOne({
-      code: invitationCode.toUpperCase(),
-      status: 'UNUSED',
-    });
-    if (!code) {
-      return NextResponse.json({ error: 'Invalid or used invitation code' }, { status: 400 });
+    const fullName = `${firstName.trim()} ${lastName.trim()}`.trim();
+
+    // Determine role — if invitation code provided, validate it; otherwise default to USER
+    let role = 'USER';
+    let referrerId: string | undefined;
+
+    if (invitationCode && invitationCode.trim()) {
+      const code = await InvitationCode.findOne({
+        code: invitationCode.trim().toUpperCase(),
+        status: 'UNUSED',
+      });
+      if (!code) {
+        return NextResponse.json({ error: 'Invalid or used invitation code' }, { status: 400 });
+      }
+      role = code.role || 'USER';
+      referrerId = code.createdBy;
+
+      // Mark code as used
+      code.status = 'USED';
+      code.usedAt = new Date();
+      await code.save();
     }
 
     // Check if email exists
@@ -30,24 +45,25 @@ export async function POST(req: NextRequest) {
       return NextResponse.json({ error: 'Email already registered' }, { status: 409 });
     }
 
-    // Determine role from invitation code
-    const role = code.role;
     const hashedPw = await hashPassword(password);
 
     // Create user
     const user = await User.create({
-      name,
+      name: fullName,
       email: email.toLowerCase(),
       password: hashedPw,
       role,
       status: 'ACTIVE',
+      phone: phone || undefined,
     });
 
-    // Mark code as used
-    code.status = 'USED';
-    code.usedBy = user._id.toString();
-    code.usedAt = new Date();
-    await code.save();
+    // Update invitation code with usedBy
+    if (invitationCode && invitationCode.trim()) {
+      await InvitationCode.updateOne(
+        { code: invitationCode.trim().toUpperCase() },
+        { usedBy: user._id.toString() }
+      );
+    }
 
     // Create wallet
     await Wallet.create({
@@ -56,16 +72,17 @@ export async function POST(req: NextRequest) {
       balances: [
         { currency: 'USDT', amount: 0, frozen: 0 },
         { currency: 'BTC', amount: 0, frozen: 0 },
+        { currency: 'ETH', amount: 0, frozen: 0 },
       ],
       totalEquity: 0,
     });
 
     // Create referral record if referred
-    if (code.createdBy) {
+    if (referrerId) {
       await Referral.create({
-        referrerId: code.createdBy,
+        referrerId,
         referredId: user._id.toString(),
-        referralCode: code.code,
+        referralCode: invitationCode,
         level: 1,
         totalCommission: 0,
       });
@@ -85,10 +102,11 @@ export async function POST(req: NextRequest) {
         email: user.email,
         role: user.role,
         status: user.status,
+        phone: user.phone,
       },
     });
   } catch (error: any) {
     console.error('Register error:', error);
-    return NextResponse.json({ error: 'Server error' }, { status: 500 });
+    return NextResponse.json({ error: error.message || 'Server error' }, { status: 500 });
   }
 }

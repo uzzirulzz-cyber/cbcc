@@ -276,9 +276,11 @@ function SignInContent() {
   const [showPassword, setShowPassword] = useState(false);
 
   // register fields
-  const [regName, setRegName] = useState('');
+  const [regFirstName, setRegFirstName] = useState('');
+  const [regLastName, setRegLastName] = useState('');
   const [regEmail, setRegEmail] = useState('');
   const [regPhone, setRegPhone] = useState('');
+  const [regCountryCode, setRegCountryCode] = useState('+1');
   const [regPassword, setRegPassword] = useState('');
   const [regConfirm, setRegConfirm] = useState('');
   const [regInviteCode, setRegInviteCode] = useState(() => {
@@ -307,10 +309,12 @@ function SignInContent() {
 
   function validateRegister(): boolean {
     const errs: Record<string, string> = {};
-    if (!regName.trim()) errs.name = 'Full name is required';
+    if (!regFirstName.trim()) errs.firstName = 'First name is required';
+    if (!regLastName.trim()) errs.lastName = 'Last name is required';
     if (!regEmail.trim()) errs.email = 'Email is required';
     else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(regEmail.trim())) errs.email = 'Invalid email address';
     if (!regPhone.trim()) errs.phone = 'Phone number is required';
+    else if (!/^\d{5,15}$/.test(regPhone.replace(/\s/g, ''))) errs.phone = 'Enter a valid phone number';
     if (!regPassword) errs.password = 'Password is required';
     else if (regPassword.length < 6) errs.password = 'Password must be at least 6 characters';
     if (regPassword !== regConfirm) errs.confirm = 'Passwords do not match';
@@ -354,11 +358,12 @@ function SignInContent() {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          name: regName.trim(),
+          firstName: regFirstName.trim(),
+          lastName: regLastName.trim(),
           email: regEmail.trim(),
-          phone: regPhone.trim(),
+          phone: `${regCountryCode} ${regPhone.trim()}`.trim(),
           password: regPassword,
-          invitationCode: regInviteCode.trim(),
+          invitationCode: regInviteCode.trim() || undefined,
         }),
       });
       const data = await res.json();
@@ -574,15 +579,27 @@ function SignInContent() {
                     onSubmit={handleRegister}
                     className="flex flex-col gap-4"
                   >
-                    <FormInput
-                      icon={User}
-                      label="Full Name"
-                      type="text"
-                      placeholder="John Doe"
-                      value={regName}
-                      onChange={setRegName}
-                      error={fieldErrors.name}
-                    />
+                    {/* First + Last Name row */}
+                    <div className="grid grid-cols-2 gap-3">
+                      <FormInput
+                        icon={User}
+                        label="First Name"
+                        type="text"
+                        placeholder="John"
+                        value={regFirstName}
+                        onChange={setRegFirstName}
+                        error={fieldErrors.firstName}
+                      />
+                      <FormInput
+                        icon={User}
+                        label="Last Name"
+                        type="text"
+                        placeholder="Doe"
+                        value={regLastName}
+                        onChange={setRegLastName}
+                        error={fieldErrors.lastName}
+                      />
+                    </div>
 
                     <FormInput
                       icon={Mail}
@@ -594,15 +611,52 @@ function SignInContent() {
                       error={fieldErrors.email}
                     />
 
-                    <FormInput
-                      icon={Phone}
-                      label="Phone Number"
-                      type="tel"
-                      placeholder="+1 (XXX) XXX-XXXX"
-                      value={regPhone}
-                      onChange={setRegPhone}
-                      error={fieldErrors.phone}
-                    />
+                    {/* Phone with country code */}
+                    <div>
+                      <label className="text-[13px] text-[#C0C7D1] mb-1.5 block">Phone Number</label>
+                      <div className="flex gap-2">
+                        <select
+                          value={regCountryCode}
+                          onChange={(e) => setRegCountryCode(e.target.value)}
+                          className="rounded-lg border bg-[rgba(8,27,58,0.6)] py-2.5 px-2 text-sm text-white outline-none transition-all duration-200 focus:border-[#0F5EFF]"
+                          style={{ borderColor: fieldErrors.phone ? '#FF4757' : 'rgba(192,199,209,0.12)', width: 90, flexShrink: 0 }}
+                        >
+                          <option value="+1">🇺🇸 +1</option>
+                          <option value="+44">🇬🇧 +44</option>
+                          <option value="+92">🇵🇰 +92</option>
+                          <option value="+91">🇮🇳 +91</option>
+                          <option value="+86">🇨🇳 +86</option>
+                          <option value="+81">🇯🇵 +81</option>
+                          <option value="+49">🇩🇪 +49</option>
+                          <option value="+33">🇫🇷 +33</option>
+                          <option value="+971">🇦🇪 +971</option>
+                          <option value="+966">🇸🇦 +966</option>
+                          <option value="+234">🇳🇬 +234</option>
+                          <option value="+55">🇧🇷 +55</option>
+                          <option value="+61">🇦🇺 +61</option>
+                          <option value="+82">🇰🇷 +82</option>
+                          <option value="+39">🇮🇹 +39</option>
+                          <option value="+34">🇪🇸 +34</option>
+                          <option value="+7">🇷🇺 +7</option>
+                          <option value="+27">🇿🇦 +27</option>
+                          <option value="+20">🇪🇬 +20</option>
+                          <option value="+55">🇲🇽 +52</option>
+                          <option value="+63">🇵🇭 +63</option>
+                        </select>
+                        <div className="relative flex-1">
+                          <Phone className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-[#7A8599]" />
+                          <input
+                            type="tel"
+                            placeholder="(XXX) XXX-XXXX"
+                            value={regPhone}
+                            onChange={(e) => setRegPhone(e.target.value)}
+                            className="w-full rounded-lg border bg-[rgba(8,27,58,0.6)] py-2.5 pl-10 pr-4 text-sm text-white placeholder-[#7A8599] outline-none transition-all duration-200 focus:border-[#0F5EFF] focus:shadow-[0_0_0_3px_rgba(15,95,255,0.12)]"
+                            style={{ borderColor: fieldErrors.phone ? '#FF4757' : 'rgba(192,199,209,0.12)' }}
+                          />
+                        </div>
+                      </div>
+                      {fieldErrors.phone && <p className="text-xs text-[#FF4757] mt-1">{fieldErrors.phone}</p>}
+                    </div>
 
                     <FormInput
                       icon={Lock}
