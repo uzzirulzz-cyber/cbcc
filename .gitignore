@@ -40,13 +40,4 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
-/src/generated/prisma
-tool-results skills generated
-*.pyc
-__pycache__
-src/generated/
-tool-results/
-skills/
-*.pyc
-__pycache__/
-src/generated/
+
