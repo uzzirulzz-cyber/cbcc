@@ -1,17 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { verifyToken, extractBearerToken } from '@/lib/auth';
+import { authenticate, customerWhereFilter } from '@/lib/rbac';
 
 // GET /api/admin/users — paginated user list with search & role filter
 export async function GET(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'SUB_AGENT')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN', 'SUB_AGENT']);
+    if (response) return response;
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
@@ -20,38 +16,32 @@ export async function GET(request: NextRequest) {
     const role = searchParams.get('role') || '';
     const status = searchParams.get('status') || '';
 
-    const where: any = {};
+    const where: any = customerWhereFilter(payload!);
     if (role) where.role = role;
     if (status) where.status = status;
 
-    // SUB_AGENT can only see their own referred users + themselves
-    if (payload.role === 'SUB_AGENT') {
-      where.OR = [
-        { agentId: payload.userId },
-        { id: payload.userId },
-      ];
-      if (search) {
-        const searchLower = `%${search}%`;
-        where.OR = [
-          { agentId: payload.userId, name: { contains: search, mode: 'insensitive' } },
-          { agentId: payload.userId, email: { contains: search, mode: 'insensitive' } },
-          { agentId: payload.userId, phone: { contains: search, mode: 'insensitive' } },
-          { id: payload.userId, name: { contains: search, mode: 'insensitive' } },
-          { id: payload.userId, email: { contains: search, mode: 'insensitive' } },
-        ];
+    if (search) {
+      const searchClause = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search, mode: 'insensitive' } },
+        ],
+      };
+      if (where.OR) {
+        // Combine agent filter with search using AND
+        where.AND = [...where.OR];
+        delete where.OR;
+        Object.assign(where, searchClause);
+      } else {
+        Object.assign(where, searchClause);
       }
-    } else if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search, mode: 'insensitive' } },
-      ];
     }
 
     const [users, total] = await Promise.all([
       prisma.user.findMany({
         where,
-        select: { id: true, name: true, firstName: true, lastName: true, email: true, role: true, status: true, avatar: true, phone: true, agentId: true, lastLogin: true, createdAt: true, updatedAt: true },
+        select: { id: true, name: true, firstName: true, lastName: true, email: true, role: true, status: true, avatar: true, phone: true, agentId: true, invitationCode: true, mustChangePassword: true, lastLogin: true, createdAt: true, updatedAt: true },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
@@ -60,9 +50,7 @@ export async function GET(request: NextRequest) {
     ]);
 
     const userIds = users.map(u => u.id);
-    const wallets = await prisma.wallet.findMany({
-      where: { userId: { in: userIds } },
-    });
+    const wallets = await prisma.wallet.findMany({ where: { userId: { in: userIds } } });
     const walletMap = new Map<string, { totalEquity: number; walletCount: number }>();
     for (const w of wallets) {
       const existing = walletMap.get(w.userId) || { totalEquity: 0, walletCount: 0 };
@@ -88,18 +76,14 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/users — update user status or role
+// PUT /api/admin/users — update user (SUPER_ADMIN only)
 export async function PUT(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN only' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN']);
+    if (response) return response;
 
     const body = await request.json();
-    const { userId, status, role, phone, name } = body;
+    const { userId, status, role, phone, name, invitationCode } = body;
     if (!userId) {
       return NextResponse.json({ error: 'userId is required' }, { status: 400 });
     }
@@ -109,11 +93,13 @@ export async function PUT(request: NextRequest) {
     if (role) updateData.role = role;
     if (phone !== undefined) updateData.phone = phone;
     if (name) updateData.name = name;
+    // Only SUPER_ADMIN can change invitationCode
+    if (invitationCode !== undefined) updateData.invitationCode = invitationCode;
 
     const user = await prisma.user.update({
       where: { id: userId },
       data: updateData,
-      select: { id: true, name: true, firstName: true, lastName: true, email: true, role: true, status: true, avatar: true, phone: true, agentId: true, lastLogin: true, createdAt: true, updatedAt: true },
+      select: { id: true, name: true, firstName: true, lastName: true, email: true, role: true, status: true, avatar: true, phone: true, agentId: true, invitationCode: true, mustChangePassword: true, lastLogin: true, createdAt: true, updatedAt: true },
     });
 
     return NextResponse.json({ message: 'User updated successfully', user: { ...user, _id: user.id } });
@@ -126,15 +112,11 @@ export async function PUT(request: NextRequest) {
   }
 }
 
-// DELETE /api/admin/users — delete a user
+// DELETE /api/admin/users — delete a user (SUPER_ADMIN only)
 export async function DELETE(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN only' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN']);
+    if (response) return response;
 
     const { searchParams } = new URL(request.url);
     const userId = searchParams.get('userId');
@@ -150,7 +132,6 @@ export async function DELETE(request: NextRequest) {
       return NextResponse.json({ error: 'Cannot delete a SUPER_ADMIN' }, { status: 400 });
     }
 
-    // Cascade deletes wallets, transactions, trades, notifications automatically via schema
     await prisma.user.delete({ where: { id: userId } });
 
     return NextResponse.json({ message: 'User and associated data deleted successfully' });

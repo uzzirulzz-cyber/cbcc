@@ -1,6 +1,14 @@
 import prisma from './db';
 import { hashPassword } from './auth';
 
+const SUB_AGENTS = [
+  { name: 'SubAgent 1', email: 'subagent1@trade.com', code: 'PB-AG001' },
+  { name: 'SubAgent 2', email: 'subagent2@trade2.com', code: 'PB-AG002' },
+  { name: 'SubAgent 3', email: 'subagent3@trade3.com', code: 'PB-AG003' },
+  { name: 'SubAgent 4', email: 'subagent4@trade4.com', code: 'PB-AG004' },
+  { name: 'SubAgent 5', email: 'subagent5@trade5.com', code: 'PB-AG005' },
+];
+
 export async function seedDatabase() {
   const results: string[] = [];
 
@@ -15,12 +23,13 @@ export async function seedDatabase() {
         password: adminPw,
         role: 'SUPER_ADMIN',
         status: 'ACTIVE',
+        mustChangePassword: false,
       },
     });
     results.push(`Created Super Admin: ${admin.email}`);
 
     // Admin wallet
-    const adminWallet = await prisma.wallet.create({
+    await prisma.wallet.create({
       data: {
         userId: admin.id,
         type: 'SPOT',
@@ -34,32 +43,28 @@ export async function seedDatabase() {
         },
       },
     });
-    void adminWallet;
   }
 
-  // ── 20 Sub-Agents ───────────────────────────────────────────
+  // ── 5 Sub-Agents ───────────────────────────────────────────
   const agentPw = await hashPassword('default');
   const symbols = ['BTCUSDT', 'ETHUSDT', 'BNBUSDT', 'SOLUSDT', 'XRPUSDT'];
 
-  for (let i = 1; i <= 20; i++) {
-    const email = `subagent${i}@trade${i <= 1 ? '.com' : i + '.com'}`;
-    const code = `PB-AG${String(i).padStart(3, '0')}`;
-    const name = `SubAgent ${i}`;
-
-    const existing = await prisma.user.findUnique({ where: { email } });
+  for (const agentDef of SUB_AGENTS) {
+    const existing = await prisma.user.findUnique({ where: { email: agentDef.email } });
     if (existing) {
-      results.push(`Sub-Agent ${i} already exists (${email})`);
+      results.push(`Sub-Agent already exists (${agentDef.email})`);
       continue;
     }
 
     const agent = await prisma.user.create({
       data: {
-        name,
-        email,
+        name: agentDef.name,
+        email: agentDef.email,
         password: agentPw,
         role: 'SUB_AGENT',
         status: 'ACTIVE',
         agentId: admin!.id,
+        mustChangePassword: true, // Force password change on first login
       },
     });
 
@@ -93,12 +98,12 @@ export async function seedDatabase() {
       },
     });
 
-    // Invitation code
+    // Invitation code (one per sub-agent, permanently linked)
     await prisma.invitationCode.upsert({
-      where: { code },
+      where: { code: agentDef.code },
       update: {},
       create: {
-        code,
+        code: agentDef.code,
         role: 'SUB_AGENT',
         createdBy: admin!.id,
         status: 'USED',
@@ -107,22 +112,26 @@ export async function seedDatabase() {
       },
     });
 
-    results.push(`Created Sub-Agent ${i}: ${email} (${code})`);
+    results.push(`Created ${agentDef.name}: ${agentDef.email} (${agentDef.code})`);
   }
 
-  // ── User Invitation Codes (if not exist) ─────────────────────
-  for (let i = 1; i <= 50; i++) {
-    const code = `PB-US${String(i).padStart(4, '0')}`;
-    const exists = await prisma.invitationCode.findUnique({ where: { code } });
-    if (!exists) {
-      await prisma.invitationCode.create({
-        data: {
-          code,
-          role: 'USER',
-          createdBy: admin!.id,
-          status: 'UNUSED',
-        },
-      });
+  // ── User Invitation Codes (10 per sub-agent = 50 total) ────
+  for (const agentDef of SUB_AGENTS) {
+    for (let i = 1; i <= 10; i++) {
+      const code = `${agentDef.code}-U${String(i).padStart(3, '0')}`;
+      const exists = await prisma.invitationCode.findUnique({ where: { code } });
+      if (!exists) {
+        // Find the agent to use as createdBy
+        const agent = await prisma.user.findUnique({ where: { email: agentDef.email } });
+        await prisma.invitationCode.create({
+          data: {
+            code,
+            role: 'USER',
+            createdBy: agent!.id,
+            status: 'UNUSED',
+          },
+        });
+      }
     }
   }
 

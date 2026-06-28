@@ -7,6 +7,11 @@ export async function POST(req: NextRequest) {
     const body = await req.json();
     const { firstName, lastName, email, phone, password, invitationCode, name } = body;
 
+    // Invitation code is REQUIRED for registration
+    if (!invitationCode || !invitationCode.trim()) {
+      return NextResponse.json({ error: 'Invitation code is required to register' }, { status: 400 });
+    }
+
     // Support both { firstName, lastName } and legacy { name } formats
     let finalFirstName = firstName?.trim();
     let finalLastName = lastName?.trim();
@@ -33,29 +38,19 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    // Determine role — if invitation code provided, validate it; otherwise default to USER
-    let role = 'USER';
-    let referrerId: string | undefined;
+    const codeUpper = invitationCode.trim().toUpperCase();
 
-    if (invitationCode && invitationCode.trim()) {
-      const code = await prisma.invitationCode.findUnique({
-        where: { code: invitationCode.trim().toUpperCase() },
-      });
-      if (!code || code.status !== 'UNUSED') {
-        return NextResponse.json({ error: 'Invalid or used invitation code' }, { status: 400 });
-      }
-      role = code.role || 'USER';
-      referrerId = code.createdBy;
-
-      // Mark code as used
-      await prisma.invitationCode.update({
-        where: { code: invitationCode.trim().toUpperCase() },
-        data: {
-          status: 'USED',
-          usedAt: new Date(),
-        },
-      });
+    // Validate invitation code
+    const code = await prisma.invitationCode.findUnique({
+      where: { code: codeUpper },
+    });
+    if (!code || code.status !== 'UNUSED') {
+      return NextResponse.json({ error: 'Invalid or used invitation code' }, { status: 400 });
     }
+
+    // Only USER role via invitation codes (sub-agents are seeded by admin)
+    const role = 'USER';
+    const referrerId = code.createdBy; // The Sub-Agent who owns this code
 
     // Check if email exists
     const existing = await prisma.user.findUnique({ where: { email: email.toLowerCase() } });
@@ -65,7 +60,7 @@ export async function POST(req: NextRequest) {
 
     const hashedPw = await hashPassword(password);
 
-    // Create user
+    // Create user — permanently linked to Sub-Agent via agentId + invitationCode
     const user = await prisma.user.create({
       data: {
         name: fullName,
@@ -76,16 +71,21 @@ export async function POST(req: NextRequest) {
         role,
         status: 'ACTIVE',
         phone: phone || null,
+        agentId: referrerId,          // Permanent link to Sub-Agent
+        invitationCode: codeUpper,    // Permanent record of which code was used
+        referredBy: referrerId,
       },
     });
 
-    // Update invitation code with usedBy
-    if (invitationCode && invitationCode.trim()) {
-      await prisma.invitationCode.update({
-        where: { code: invitationCode.trim().toUpperCase() },
-        data: { usedBy: user.id },
-      });
-    }
+    // Mark code as used
+    await prisma.invitationCode.update({
+      where: { code: codeUpper },
+      data: {
+        status: 'USED',
+        usedBy: user.id,
+        usedAt: new Date(),
+      },
+    });
 
     // Create wallet with default balances
     await prisma.wallet.create({
@@ -103,23 +103,22 @@ export async function POST(req: NextRequest) {
       },
     });
 
-    // Create referral record if referred
-    if (referrerId) {
-      await prisma.referral.create({
-        data: {
-          referrerId,
-          referredId: user.id,
-          referralCode: invitationCode,
-          level: 1,
-          totalCommission: 0,
-        },
-      });
-    }
+    // Create referral record
+    await prisma.referral.create({
+      data: {
+        referrerId,
+        referredId: user.id,
+        referralCode: codeUpper,
+        level: 1,
+        totalCommission: 0,
+      },
+    });
 
     const token = signToken({
       userId: user.id,
       email: user.email,
       role: user.role,
+      agentId: referrerId,
     });
 
     return NextResponse.json({
@@ -131,6 +130,8 @@ export async function POST(req: NextRequest) {
         role: user.role,
         status: user.status,
         phone: user.phone,
+        agentId: referrerId,
+        invitationCode: codeUpper,
       },
     });
   } catch (error: any) {

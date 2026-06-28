@@ -59,7 +59,8 @@ export const ModelName = {
   Referral: 'Referral',
   InvitationCode: 'InvitationCode',
   AgentConfig: 'AgentConfig',
-  Notification: 'Notification'
+  Notification: 'Notification',
+  LoginLog: 'LoginLog'
 } as const
 
 export type ModelName = (typeof ModelName)[keyof typeof ModelName]
@@ -90,7 +91,9 @@ export const UserScalarFieldEnum = {
   avatar: 'avatar',
   phone: 'phone',
   agentId: 'agentId',
+  invitationCode: 'invitationCode',
   referredBy: 'referredBy',
+  mustChangePassword: 'mustChangePassword',
   lastLogin: 'lastLogin',
   createdAt: 'createdAt',
   updatedAt: 'updatedAt'
@@ -225,6 +228,19 @@ export const NotificationScalarFieldEnum = {
 } as const
 
 export type NotificationScalarFieldEnum = (typeof NotificationScalarFieldEnum)[keyof typeof NotificationScalarFieldEnum]
+
+
+export const LoginLogScalarFieldEnum = {
+  id: 'id',
+  userId: 'userId',
+  email: 'email',
+  success: 'success',
+  ip: 'ip',
+  userAgent: 'userAgent',
+  createdAt: 'createdAt'
+} as const
+
+export type LoginLogScalarFieldEnum = (typeof LoginLogScalarFieldEnum)[keyof typeof LoginLogScalarFieldEnum]
 
 
 export const SortOrder = {

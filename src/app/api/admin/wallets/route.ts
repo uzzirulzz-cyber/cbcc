@@ -1,17 +1,13 @@
 /* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { verifyToken, extractBearerToken } from '@/lib/auth';
+import { authenticate, getAccessibleUserIds } from '@/lib/rbac';
 
-// GET /api/admin/wallets — list all wallets with user info
+// GET /api/admin/wallets — list wallets (Sub-Agent: only their customers)
 export async function GET(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || !payload.role || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'SUB_AGENT')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN', 'SUB_AGENT']);
+    if (response) return response;
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
@@ -21,9 +17,16 @@ export async function GET(request: NextRequest) {
     const status = searchParams.get('status') || '';
 
     const where: any = {};
-    if (userId) where.userId = userId;
     if (type) where.type = type;
     if (status) where.status = status;
+
+    // Sub-Agent: restrict to their customers' wallets only
+    if (payload!.role === 'SUB_AGENT') {
+      const allowedIds = await getAccessibleUserIds(payload!);
+      where.userId = { in: allowedIds };
+    } else if (userId) {
+      where.userId = userId;
+    }
 
     const [wallets, total] = await Promise.all([
       prisma.wallet.findMany({
@@ -40,7 +43,7 @@ export async function GET(request: NextRequest) {
     const users = userIds.length > 0
       ? await prisma.user.findMany({
           where: { id: { in: userIds } },
-          select: { id: true, name: true, email: true, role: true, status: true },
+          select: { id: true, name: true, email: true, role: true, status: true, agentId: true, invitationCode: true },
         })
       : [];
     const userMap = new Map(users.map(u => [u.id, u]));
@@ -58,14 +61,16 @@ export async function GET(request: NextRequest) {
       user: userMap.get(w.userId) || null,
     }));
 
-    const totalEquityResult = await prisma.wallet.aggregate({
-      _sum: { totalEquity: true },
-    });
-    const totalEquity = totalEquityResult._sum.totalEquity || 0;
+    // Only SUPER_ADMIN sees total platform equity
+    let summary: any = { walletCount: total };
+    if (payload!.role === 'SUPER_ADMIN') {
+      const totalEquityResult = await prisma.wallet.aggregate({ _sum: { totalEquity: true } });
+      summary.totalEquity = totalEquityResult._sum.totalEquity || 0;
+    }
 
     return NextResponse.json({
       wallets: enriched,
-      summary: { totalEquity, walletCount: total },
+      summary,
       pagination: { page, limit, total, totalPages: Math.ceil(total / limit) },
     });
   } catch (error: unknown) {
@@ -74,15 +79,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/admin/wallets — adjust a wallet balance (admin action)
+// POST /api/admin/wallets — adjust balance (SUPER_ADMIN only)
 export async function POST(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN only' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN']);
+    if (response) return response;
 
     const body = await request.json();
     const { userId, walletType, currency, amount, reason } = body;
@@ -102,12 +103,7 @@ export async function POST(request: NextRequest) {
 
     if (!wallet) {
       wallet = await prisma.wallet.create({
-        data: {
-          userId,
-          type: walletType || 'SPOT',
-          status: 'ACTIVE',
-          totalEquity: 0,
-        },
+        data: { userId, type: walletType || 'SPOT', status: 'ACTIVE', totalEquity: 0 },
         include: { balances: true },
       });
     }
@@ -116,16 +112,10 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Wallet is frozen' }, { status: 400 });
     }
 
-    // Find or create balance entry
     let balance = wallet.balances.find(b => b.currency === upperCurrency);
     if (!balance) {
       balance = await prisma.walletBalance.create({
-        data: {
-          walletId: wallet.id,
-          currency: upperCurrency,
-          amount: 0,
-          frozen: 0,
-        },
+        data: { walletId: wallet.id, currency: upperCurrency, amount: 0, frozen: 0 },
       });
     }
 
@@ -136,18 +126,11 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'Insufficient balance for this adjustment' }, { status: 400 });
     }
 
-    await prisma.walletBalance.update({
-      where: { id: balance.id },
-      data: { amount: newAmount },
-    });
+    await prisma.walletBalance.update({ where: { id: balance.id }, data: { amount: newAmount } });
 
-    // Recalculate total equity
     const allBalances = await prisma.walletBalance.findMany({ where: { walletId: wallet.id } });
     const totalEquity = allBalances.reduce((s, b) => s + b.amount + b.frozen, 0);
-    await prisma.wallet.update({
-      where: { id: wallet.id },
-      data: { totalEquity },
-    });
+    await prisma.wallet.update({ where: { id: wallet.id }, data: { totalEquity } });
 
     const tx = await prisma.transaction.create({
       data: {
@@ -158,13 +141,7 @@ export async function POST(request: NextRequest) {
         amount: Math.abs(amount),
         fee: 0,
         description: reason || `Admin balance adjustment: ${amount > 0 ? '+' : ''}${amount} ${upperCurrency}`,
-        metadata: {
-          adminAction: true,
-          adminId: payload.userId,
-          walletId: wallet.id,
-          previousAmount,
-          newAmount,
-        },
+        metadata: { adminAction: true, adminId: payload!.userId, walletId: wallet.id, previousAmount, newAmount },
       },
     });
 

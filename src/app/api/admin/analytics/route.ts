@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { verifyToken, extractBearerToken } from '@/lib/auth';
+import { authenticate, blockSubAgentAnalytics } from '@/lib/rbac';
 
 function formatDateForGroup(date: Date, period: string): string {
   const y = date.getFullYear();
@@ -18,12 +18,12 @@ function formatDateForGroup(date: Date, period: string): string {
 // GET /api/admin/analytics — revenue & platform analytics
 export async function GET(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || !payload.role || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'SUB_AGENT')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN']);
+    if (response) return response;
+
+    // Block Sub-Agent from platform analytics
+    const blocked = blockSubAgentAnalytics(payload!);
+    if (blocked) return blocked;
 
     const { searchParams } = new URL(request.url);
     const period = searchParams.get('period') || 'daily';

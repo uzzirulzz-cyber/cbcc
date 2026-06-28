@@ -36,7 +36,9 @@ export type UserMinAggregateOutputType = {
   avatar: string | null
   phone: string | null
   agentId: string | null
+  invitationCode: string | null
   referredBy: string | null
+  mustChangePassword: boolean | null
   lastLogin: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -54,7 +56,9 @@ export type UserMaxAggregateOutputType = {
   avatar: string | null
   phone: string | null
   agentId: string | null
+  invitationCode: string | null
   referredBy: string | null
+  mustChangePassword: boolean | null
   lastLogin: Date | null
   createdAt: Date | null
   updatedAt: Date | null
@@ -72,7 +76,9 @@ export type UserCountAggregateOutputType = {
   avatar: number
   phone: number
   agentId: number
+  invitationCode: number
   referredBy: number
+  mustChangePassword: number
   lastLogin: number
   createdAt: number
   updatedAt: number
@@ -92,7 +98,9 @@ export type UserMinAggregateInputType = {
   avatar?: true
   phone?: true
   agentId?: true
+  invitationCode?: true
   referredBy?: true
+  mustChangePassword?: true
   lastLogin?: true
   createdAt?: true
   updatedAt?: true
@@ -110,7 +118,9 @@ export type UserMaxAggregateInputType = {
   avatar?: true
   phone?: true
   agentId?: true
+  invitationCode?: true
   referredBy?: true
+  mustChangePassword?: true
   lastLogin?: true
   createdAt?: true
   updatedAt?: true
@@ -128,7 +138,9 @@ export type UserCountAggregateInputType = {
   avatar?: true
   phone?: true
   agentId?: true
+  invitationCode?: true
   referredBy?: true
+  mustChangePassword?: true
   lastLogin?: true
   createdAt?: true
   updatedAt?: true
@@ -219,7 +231,9 @@ export type UserGroupByOutputType = {
   avatar: string | null
   phone: string | null
   agentId: string | null
+  invitationCode: string | null
   referredBy: string | null
+  mustChangePassword: boolean
   lastLogin: Date | null
   createdAt: Date
   updatedAt: Date
@@ -258,7 +272,9 @@ export type UserWhereInput = {
   avatar?: Prisma.StringNullableFilter<"User"> | string | null
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   agentId?: Prisma.StringNullableFilter<"User"> | string | null
+  invitationCode?: Prisma.StringNullableFilter<"User"> | string | null
   referredBy?: Prisma.StringNullableFilter<"User"> | string | null
+  mustChangePassword?: Prisma.BoolFilter<"User"> | boolean
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -280,7 +296,9 @@ export type UserOrderByWithRelationInput = {
   avatar?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   agentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  invitationCode?: Prisma.SortOrderInput | Prisma.SortOrder
   referredBy?: Prisma.SortOrderInput | Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -305,7 +323,9 @@ export type UserWhereUniqueInput = Prisma.AtLeast<{
   avatar?: Prisma.StringNullableFilter<"User"> | string | null
   phone?: Prisma.StringNullableFilter<"User"> | string | null
   agentId?: Prisma.StringNullableFilter<"User"> | string | null
+  invitationCode?: Prisma.StringNullableFilter<"User"> | string | null
   referredBy?: Prisma.StringNullableFilter<"User"> | string | null
+  mustChangePassword?: Prisma.BoolFilter<"User"> | boolean
   lastLogin?: Prisma.DateTimeNullableFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeFilter<"User"> | Date | string
@@ -327,7 +347,9 @@ export type UserOrderByWithAggregationInput = {
   avatar?: Prisma.SortOrderInput | Prisma.SortOrder
   phone?: Prisma.SortOrderInput | Prisma.SortOrder
   agentId?: Prisma.SortOrderInput | Prisma.SortOrder
+  invitationCode?: Prisma.SortOrderInput | Prisma.SortOrder
   referredBy?: Prisma.SortOrderInput | Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrderInput | Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -351,7 +373,9 @@ export type UserScalarWhereWithAggregatesInput = {
   avatar?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   phone?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   agentId?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  invitationCode?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
   referredBy?: Prisma.StringNullableWithAggregatesFilter<"User"> | string | null
+  mustChangePassword?: Prisma.BoolWithAggregatesFilter<"User"> | boolean
   lastLogin?: Prisma.DateTimeNullableWithAggregatesFilter<"User"> | Date | string | null
   createdAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
   updatedAt?: Prisma.DateTimeWithAggregatesFilter<"User"> | Date | string
@@ -369,7 +393,9 @@ export type UserCreateInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -391,7 +417,9 @@ export type UserUncheckedCreateInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -413,7 +441,9 @@ export type UserUpdateInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -435,7 +465,9 @@ export type UserUncheckedUpdateInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -457,7 +489,9 @@ export type UserCreateManyInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -475,7 +509,9 @@ export type UserUpdateManyMutationInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -493,7 +529,9 @@ export type UserUncheckedUpdateManyInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -511,7 +549,9 @@ export type UserCountOrderByAggregateInput = {
   avatar?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   agentId?: Prisma.SortOrder
+  invitationCode?: Prisma.SortOrder
   referredBy?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -529,7 +569,9 @@ export type UserMaxOrderByAggregateInput = {
   avatar?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   agentId?: Prisma.SortOrder
+  invitationCode?: Prisma.SortOrder
   referredBy?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -547,7 +589,9 @@ export type UserMinOrderByAggregateInput = {
   avatar?: Prisma.SortOrder
   phone?: Prisma.SortOrder
   agentId?: Prisma.SortOrder
+  invitationCode?: Prisma.SortOrder
   referredBy?: Prisma.SortOrder
+  mustChangePassword?: Prisma.SortOrder
   lastLogin?: Prisma.SortOrder
   createdAt?: Prisma.SortOrder
   updatedAt?: Prisma.SortOrder
@@ -564,6 +608,10 @@ export type StringFieldUpdateOperationsInput = {
 
 export type NullableStringFieldUpdateOperationsInput = {
   set?: string | null
+}
+
+export type BoolFieldUpdateOperationsInput = {
+  set?: boolean
 }
 
 export type NullableDateTimeFieldUpdateOperationsInput = {
@@ -642,7 +690,9 @@ export type UserCreateWithoutWalletsInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -663,7 +713,9 @@ export type UserUncheckedCreateWithoutWalletsInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -700,7 +752,9 @@ export type UserUpdateWithoutWalletsInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -721,7 +775,9 @@ export type UserUncheckedUpdateWithoutWalletsInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -742,7 +798,9 @@ export type UserCreateWithoutTransactionsInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -763,7 +821,9 @@ export type UserUncheckedCreateWithoutTransactionsInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -800,7 +860,9 @@ export type UserUpdateWithoutTransactionsInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -821,7 +883,9 @@ export type UserUncheckedUpdateWithoutTransactionsInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -842,7 +906,9 @@ export type UserCreateWithoutTradesInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -863,7 +929,9 @@ export type UserUncheckedCreateWithoutTradesInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -900,7 +968,9 @@ export type UserUpdateWithoutTradesInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -921,7 +991,9 @@ export type UserUncheckedUpdateWithoutTradesInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -942,7 +1014,9 @@ export type UserCreateWithoutNotificationsInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -963,7 +1037,9 @@ export type UserUncheckedCreateWithoutNotificationsInput = {
   avatar?: string | null
   phone?: string | null
   agentId?: string | null
+  invitationCode?: string | null
   referredBy?: string | null
+  mustChangePassword?: boolean
   lastLogin?: Date | string | null
   createdAt?: Date | string
   updatedAt?: Date | string
@@ -1000,7 +1076,9 @@ export type UserUpdateWithoutNotificationsInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1021,7 +1099,9 @@ export type UserUncheckedUpdateWithoutNotificationsInput = {
   avatar?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   phone?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   agentId?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  invitationCode?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
   referredBy?: Prisma.NullableStringFieldUpdateOperationsInput | string | null
+  mustChangePassword?: Prisma.BoolFieldUpdateOperationsInput | boolean
   lastLogin?: Prisma.NullableDateTimeFieldUpdateOperationsInput | Date | string | null
   createdAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
   updatedAt?: Prisma.DateTimeFieldUpdateOperationsInput | Date | string
@@ -1100,7 +1180,9 @@ export type UserSelect<ExtArgs extends runtime.Types.Extensions.InternalArgs = r
   avatar?: boolean
   phone?: boolean
   agentId?: boolean
+  invitationCode?: boolean
   referredBy?: boolean
+  mustChangePassword?: boolean
   lastLogin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1123,7 +1205,9 @@ export type UserSelectCreateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatar?: boolean
   phone?: boolean
   agentId?: boolean
+  invitationCode?: boolean
   referredBy?: boolean
+  mustChangePassword?: boolean
   lastLogin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1141,7 +1225,9 @@ export type UserSelectUpdateManyAndReturn<ExtArgs extends runtime.Types.Extensio
   avatar?: boolean
   phone?: boolean
   agentId?: boolean
+  invitationCode?: boolean
   referredBy?: boolean
+  mustChangePassword?: boolean
   lastLogin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
@@ -1159,13 +1245,15 @@ export type UserSelectScalar = {
   avatar?: boolean
   phone?: boolean
   agentId?: boolean
+  invitationCode?: boolean
   referredBy?: boolean
+  mustChangePassword?: boolean
   lastLogin?: boolean
   createdAt?: boolean
   updatedAt?: boolean
 }
 
-export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "firstName" | "lastName" | "email" | "password" | "role" | "status" | "avatar" | "phone" | "agentId" | "referredBy" | "lastLogin" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
+export type UserOmit<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = runtime.Types.Extensions.GetOmit<"id" | "name" | "firstName" | "lastName" | "email" | "password" | "role" | "status" | "avatar" | "phone" | "agentId" | "invitationCode" | "referredBy" | "mustChangePassword" | "lastLogin" | "createdAt" | "updatedAt", ExtArgs["result"]["user"]>
 export type UserInclude<ExtArgs extends runtime.Types.Extensions.InternalArgs = runtime.Types.Extensions.DefaultArgs> = {
   wallets?: boolean | Prisma.User$walletsArgs<ExtArgs>
   transactions?: boolean | Prisma.User$transactionsArgs<ExtArgs>
@@ -1196,7 +1284,9 @@ export type $UserPayload<ExtArgs extends runtime.Types.Extensions.InternalArgs =
     avatar: string | null
     phone: string | null
     agentId: string | null
+    invitationCode: string | null
     referredBy: string | null
+    mustChangePassword: boolean
     lastLogin: Date | null
     createdAt: Date
     updatedAt: Date
@@ -1638,7 +1728,9 @@ export interface UserFieldRefs {
   readonly avatar: Prisma.FieldRef<"User", 'String'>
   readonly phone: Prisma.FieldRef<"User", 'String'>
   readonly agentId: Prisma.FieldRef<"User", 'String'>
+  readonly invitationCode: Prisma.FieldRef<"User", 'String'>
   readonly referredBy: Prisma.FieldRef<"User", 'String'>
+  readonly mustChangePassword: Prisma.FieldRef<"User", 'Boolean'>
   readonly lastLogin: Prisma.FieldRef<"User", 'DateTime'>
   readonly createdAt: Prisma.FieldRef<"User", 'DateTime'>
   readonly updatedAt: Prisma.FieldRef<"User", 'DateTime'>

@@ -62,3 +62,8 @@ export type AgentConfig = Prisma.AgentConfigModel
  * 
  */
 export type Notification = Prisma.NotificationModel
+/**
+ * Model LoginLog
+ * 
+ */
+export type LoginLog = Prisma.LoginLogModel

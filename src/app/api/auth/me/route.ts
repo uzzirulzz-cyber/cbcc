@@ -15,7 +15,8 @@ export async function GET(req: NextRequest) {
       select: {
         id: true, name: true, firstName: true, lastName: true, email: true,
         role: true, status: true, avatar: true, phone: true, agentId: true,
-        referredBy: true, lastLogin: true, createdAt: true, updatedAt: true,
+        invitationCode: true, referredBy: true, mustChangePassword: true,
+        lastLogin: true, createdAt: true, updatedAt: true,
       },
     });
     if (!user) return NextResponse.json({ error: 'User not found' }, { status: 404 });

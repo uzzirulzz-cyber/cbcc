@@ -1,16 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { verifyToken, extractBearerToken } from '@/lib/auth';
+import { authenticate, getAccessibleUserIds } from '@/lib/rbac';
 
-// GET /api/admin/withdrawals — list withdrawal requests
+// GET /api/admin/withdrawals — Sub-Agent sees only their customers'
 export async function GET(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'SUB_AGENT')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN', 'SUB_AGENT']);
+    if (response) return response;
 
     const { searchParams } = new URL(request.url);
     const page = Math.max(1, parseInt(searchParams.get('page') || '1'));
@@ -20,30 +16,24 @@ export async function GET(request: NextRequest) {
     const where: any = { type: 'WITHDRAW' };
     if (status) where.status = status;
 
+    // Sub-Agent: only their customers' withdrawals
+    if (payload!.role === 'SUB_AGENT') {
+      const allowedIds = await getAccessibleUserIds(payload!);
+      where.userId = { in: allowedIds };
+    }
+
     const [txs, total] = await Promise.all([
-      prisma.transaction.findMany({
-        where,
-        orderBy: { createdAt: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
+      prisma.transaction.findMany({ where, orderBy: { createdAt: 'desc' }, skip: (page - 1) * limit, take: limit }),
       prisma.transaction.count({ where }),
     ]);
 
     const userIds = [...new Set(txs.map(t => t.userId))];
     const users = userIds.length > 0
-      ? await prisma.user.findMany({
-          where: { id: { in: userIds } },
-          select: { id: true, name: true, email: true, phone: true },
-        })
+      ? await prisma.user.findMany({ where: { id: { in: userIds } }, select: { id: true, name: true, email: true, phone: true, agentId: true, invitationCode: true } })
       : [];
     const userMap = new Map(users.map(u => [u.id, u]));
 
-    const enriched = txs.map(tx => ({
-      ...tx,
-      _id: tx.id,
-      user: userMap.get(tx.userId) || null,
-    }));
+    const enriched = txs.map(tx => ({ ...tx, _id: tx.id, user: userMap.get(tx.userId) || null }));
 
     return NextResponse.json({
       withdrawals: enriched,
@@ -55,15 +45,11 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// PUT /api/admin/withdrawals — approve/reject a withdrawal
+// PUT /api/admin/withdrawals — approve/reject (SUPER_ADMIN only)
 export async function PUT(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN only' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN']);
+    if (response) return response;
 
     const { txId, status } = await request.json();
     if (!txId || !status) {
@@ -73,10 +59,7 @@ export async function PUT(request: NextRequest) {
       return NextResponse.json({ error: 'Invalid status' }, { status: 400 });
     }
 
-    const tx = await prisma.transaction.update({
-      where: { id: txId },
-      data: { status },
-    });
+    const tx = await prisma.transaction.update({ where: { id: txId }, data: { status } });
 
     return NextResponse.json({ message: `Withdrawal ${status.toLowerCase()}`, transaction: tx });
   } catch (error: unknown) {

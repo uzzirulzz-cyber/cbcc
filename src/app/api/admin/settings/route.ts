@@ -1,7 +1,6 @@
-/* eslint-disable @typescript-eslint/no-explicit-any */
 import { NextRequest, NextResponse } from 'next/server';
 import prisma from '@/lib/db';
-import { verifyToken, extractBearerToken } from '@/lib/auth';
+import { authenticate, blockSubAgentAnalytics } from '@/lib/rbac';
 
 const DEFAULT_SYSTEM_SETTINGS = {
   platformName: 'NexTrade Pro',
@@ -50,12 +49,8 @@ let systemSettings = { ...DEFAULT_SYSTEM_SETTINGS };
 // GET /api/admin/settings — retrieve system settings
 export async function GET(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || (payload.role !== 'SUPER_ADMIN' && payload.role !== 'SUB_AGENT')) {
-      return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN', 'SUB_AGENT']);
+    if (response) return response;
 
     const [totalUsers, activeUsers] = await Promise.all([
       prisma.user.count(),
@@ -76,12 +71,8 @@ export async function GET(request: NextRequest) {
 // PUT /api/admin/settings — update system settings
 export async function PUT(request: NextRequest) {
   try {
-    const token = extractBearerToken(request.headers.get('authorization'));
-    if (!token) return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
-    const payload = verifyToken(token);
-    if (!payload || payload.role !== 'SUPER_ADMIN') {
-      return NextResponse.json({ error: 'Forbidden: SUPER_ADMIN only' }, { status: 403 });
-    }
+    const { payload, response } = authenticate(request, ['SUPER_ADMIN']);
+    if (response) return response;
 
     const body = await request.json();
     const skipFields = new Set(['_id', 'createdAt', 'updatedAt']);

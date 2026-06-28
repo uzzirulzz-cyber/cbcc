@@ -9,21 +9,23 @@ datasource db {
 
 // ======================== USER ========================
 model User {
-  id           String   @id @default(uuid())
-  name         String
-  firstName    String?
-  lastName     String?
-  email        String   @unique
-  password     String
-  role         String   @default("USER") // SUPER_ADMIN, SUB_AGENT, USER
-  status       String   @default("ACTIVE") // ACTIVE, SUSPENDED, LOCKED
-  avatar       String?
-  phone        String?
-  agentId      String?
-  referredBy   String?
-  lastLogin    DateTime?
-  createdAt    DateTime @default(now())
-  updatedAt    DateTime @updatedAt
+  id                String    @id @default(uuid())
+  name              String
+  firstName         String?
+  lastName          String?
+  email             String    @unique
+  password          String
+  role              String    @default("USER") // SUPER_ADMIN, SUB_AGENT, USER
+  status            String    @default("ACTIVE") // ACTIVE, SUSPENDED, LOCKED
+  avatar            String?
+  phone             String?
+  agentId           String?   // Sub-Agent who referred this user
+  invitationCode    String?   // Code used at registration (immutable unless SUPER_ADMIN changes it)
+  referredBy        String?
+  mustChangePassword Boolean  @default(false)
+  lastLogin         DateTime?
+  createdAt         DateTime  @default(now())
+  updatedAt         DateTime  @updatedAt
 
   wallets      Wallet[]
   transactions Transaction[]
@@ -33,6 +35,7 @@ model User {
   @@index([email])
   @@index([role])
   @@index([agentId])
+  @@index([invitationCode])
 }
 
 // ======================== WALLET ========================
@@ -182,5 +185,20 @@ model Notification {
 
   @@index([userId])
   @@index([userId, read])
+  @@index([createdAt(sort: Desc)])
+}
+
+// ======================== LOGIN LOG ========================
+model LoginLog {
+  id        String   @id @default(uuid())
+  userId    String
+  email     String
+  success   Boolean
+  ip        String?
+  userAgent String?
+  createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([email])
   @@index([createdAt(sort: Desc)])
 }
