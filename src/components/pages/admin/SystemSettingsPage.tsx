@@ -2,7 +2,7 @@
 
 import React, { useState, useEffect, useCallback } from 'react';
 import { motion } from 'framer-motion';
-import { Save, Loader2, Settings, UserPlus, BarChart3, DollarSign } from 'lucide-react';
+import { Save, Loader2, Settings, UserPlus, BarChart3, DollarSign, Trash2, RotateCcw } from 'lucide-react';
 import { useStore } from '@/store/useStore';
 
 const containerVariants = {
@@ -65,6 +65,8 @@ export default function SystemSettingsPage() {
   const [settings, setSettings] = useState<SystemSettings>(defaultSettings);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
+  const [resetting, setResetting] = useState(false);
+  const [showResetConfirm, setShowResetConfirm] = useState(false);
   const [error, setError] = useState('');
   const [message, setMessage] = useState('');
 
@@ -107,6 +109,29 @@ export default function SystemSettingsPage() {
       setError(err.message || 'Failed to save');
     } finally {
       setSaving(false);
+    }
+  }
+
+  async function handleReset() {
+    setResetting(true);
+    setError('');
+    setMessage('');
+    try {
+      const res = await fetch('/api/admin/reset', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${token}` },
+      });
+      if (!res.ok) {
+        const data = await res.json();
+        throw new Error(data.error || 'Reset failed');
+      }
+      const data = await res.json();
+      setMessage(`Reset complete! Deleted: ${data.deleted?.trades || 0} trades, ${data.deleted?.transactions || 0} transactions, ${data.deleted?.users || 0} users, ${data.deleted?.notifications || 0} notifications, ${data.deleted?.referrals || 0} referrals. Wallets zeroed.`);
+      setShowResetConfirm(false);
+    } catch (err: any) {
+      setError(err.message || 'Reset failed');
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -210,6 +235,63 @@ export default function SystemSettingsPage() {
             <input type="number" step="1" value={settings.dailyWithdrawalLimit} onChange={(e) => setSettings((p) => ({ ...p, dailyWithdrawalLimit: parseFloat(e.target.value) || 0 }))} className="input-field" />
           </div>
         </div>
+      </motion.div>
+
+      {/* Danger Zone — Reset Panel */}
+      <motion.div
+        className="glass-card p-6"
+        variants={itemVariants}
+        style={{ borderColor: 'rgba(255, 61, 87, 0.2)' }}
+      >
+        <h2 className="text-base font-semibold mb-2 flex items-center gap-2" style={{ color: 'var(--accent-red)' }}>
+          <Trash2 size={18} />
+          Danger Zone
+        </h2>
+        <p className="text-sm mb-4" style={{ color: 'var(--text-muted)' }}>
+          Permanently delete all trades, transactions, regular users, notifications, referrals, and zero all wallets. Admins, sub-agents, and invitation codes are preserved.
+        </p>
+
+        {!showResetConfirm ? (
+          <button
+            className="btn-danger flex items-center gap-2"
+            onClick={() => setShowResetConfirm(true)}
+          >
+            <RotateCcw size={16} />
+            Reset All Dummy Data
+          </button>
+        ) : (
+          <div className="flex items-center gap-3">
+            <div
+              className="flex-1 px-4 py-3 rounded-xl"
+              style={{
+                background: 'rgba(255, 61, 87, 0.08)',
+                border: '1px solid rgba(255, 61, 87, 0.2)',
+              }}
+            >
+              <p className="text-sm font-semibold" style={{ color: 'var(--accent-red)' }}>
+                Are you sure? This cannot be undone.
+              </p>
+            </div>
+            <button
+              className="btn-danger flex items-center gap-2"
+              onClick={handleReset}
+              disabled={resetting}
+            >
+              {resetting ? (
+                <><Loader2 size={16} className="animate-spin" /> Resetting...</>
+              ) : (
+                <><Trash2 size={16} /> Confirm Reset</>
+              )}
+            </button>
+            <button
+              className="btn-secondary"
+              onClick={() => setShowResetConfirm(false)}
+              disabled={resetting}
+            >
+              Cancel
+            </button>
+          </div>
+        )}
       </motion.div>
 
       {/* Save */}
